@@ -1,8 +1,8 @@
 # Create a new load balancer
 
 resource "aws_alb" "vault" {
-  name_prefix     = "vault"
-  security_groups = ["${aws_security_group.alb-vault-sg.id}"]
+  name_prefix     = "vault-"
+  security_groups = ["${aws_security_group.lb-vault-sg.id}"]
   internal        = false
   subnets         = ["${var.subnets}"]
 
@@ -20,7 +20,7 @@ resource "aws_alb" "vault" {
 # DNS Alias for the LB
 resource "aws_route53_record" "vault" {
   zone_id = "${data.aws_route53_zone.zone.zone_id}"
-  name    = "${coalesce(var.hostname, data.aws_vpc.vpc.tags["Name"])}.${data.aws_route53_zone.zone.name}"
+  name    = "${coalesce(var.hostname, "vault")}.${data.aws_route53_zone.zone.name}"
   type    = "A"
 
   alias {
@@ -37,8 +37,8 @@ resource "aws_alb_target_group" "vault_ui" {
   vpc_id   = "${data.aws_vpc.vpc.id}"
 
   health_check {
-    path    = "/v1/sys/health"
-    matcher = "200,429,501,503" #maybe a var?
+    path    = "/v1/sys/health?standbyok=true"
+    matcher = "200,429" #maybe a var?
   }
 
   stickiness {

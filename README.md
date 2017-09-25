@@ -6,6 +6,11 @@ Terraform Module for deploying Vault on AWS ECS
 
 docker run -it --rm -d --network=host --cap-add=IPC_LOCK -e 'VAULT_LOCAL_CONFIG={"backend": {"consul": {"address": "127.0.0.1:8500", "path": "vault"}}, "default_lease_ttl": "168h", "max_lease_ttl": "720h"}'  vault server
 
+docker run -it --privileged --network=host -e 'VAULT_LOCAL_CONFIG={ "disable_mlock": true, "backend": {"consul": {"address": "10.1.10.24:8500", "path": "vault"}}, "default_lease_ttl": "168h", "max_lease_ttl": "720h", "listener": [{ "tcp": { "address": "0.0.0.0:8200", "tls_disable": true }}] }'  vault server
+
+Unseal Key 1: a0yyQJjmO87E/MlEtRsjN+X6FP6TjXy1xuHmBS+4Fvw=
+Initial Root Token: df2584c6-af8c-8b8b-85b4-1b056cfc6fad
+
 > CircleCI
 
 
@@ -19,14 +24,8 @@ Module Input Variables
 - `dns_zone` - Zone where the Consul UI alb will be created. This should *not* be consul.tld.com
 - `ecs_cluster_id` - ARN of the ECS ID
 - `env` - env to deploy into, should typically dev/staging/prod
-- `join_ec2_tag` - EC2 Tags which consul will search for in order to generate a list of IP's to join. See https://github.com/hashicorp/consul-ec2-auto-join-example for more examples.
 - `subnets` - List of subnets used to deploy the Consul alb
 - `vpc_id`  - VPC ID
-- `sha_htpasswd_hash` - Entries must be created with htpasswd -s for SHA encryption
-- `oauth2_proxy_github_org` - Github Org
-- `oauth2_proxy_client_id` - the OAuth Client ID: ie: 123456.apps.googleusercontent.com
-- `oauth2_proxy_client_secret` - the OAuth Client Secret
-- `s3_backup_bucket` - S3 Bucket to use to store backups of consul snapshots - defaults to backup-bucket
 
 
 #### Optional

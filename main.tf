@@ -1,3 +1,6 @@
+#docker run --rm -it -e VAULT_ADDR='http://127.0.0.1:8200' --privileged --network=host vault unseal a0yyQJjmO87E/MlEtRsjN+X6FP6TjXy1xuHmBS+4Fvw=
+data "aws_availability_zones" "available" {}
+
 data "aws_vpc" "vpc" {
   id = "${var.vpc_id}"
 }
@@ -50,7 +53,7 @@ resource "aws_ecs_service" "vault" {
   name            = "vault-${var.env}"
   cluster         = "${var.ecs_cluster_id}"
   task_definition = "${aws_ecs_task_definition.vault.arn}"
-  desired_count   = "1"                                    # var.desired_count
+  desired_count   = "2"                                    # var.desired_count
 
   placement_constraints {
     type = "distinctInstance"
@@ -58,11 +61,14 @@ resource "aws_ecs_service" "vault" {
 
   load_balancer {
     target_group_arn = "${aws_alb_target_group.vault_ui.arn}"
-    container_name   = "vault-ui-${var.env}"
+    #elb_name         = "${aws_elb.vault.name}"
+    container_name   = "vault-${var.env}"
     container_port   = 8200
   }
 
   iam_role = "${aws_iam_role.ecsServiceRole.arn}"
+
+#  depends_on = [ "aws_iam_role.ecsServiceRole" ]
 
   depends_on = ["aws_alb_target_group.vault_ui",
     "aws_alb_listener.vault_https",
@@ -72,14 +78,14 @@ resource "aws_ecs_service" "vault" {
 }
 
 # Security Groups
-resource "aws_security_group" "alb-vault-sg" {
+resource "aws_security_group" "lb-vault-sg" {
   name        = "tf-${data.aws_vpc.vpc.tags["Name"]}-vault-uiSecurityGroup"
   description = "Allow Web Traffic into the ${data.aws_vpc.vpc.tags["Name"]} VPC"
   vpc_id      = "${data.aws_vpc.vpc.id}"
 
   ingress {
-    from_port   = 8200
-    to_port     = 8200
+    from_port   = 443
+    to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
