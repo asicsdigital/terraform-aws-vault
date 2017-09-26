@@ -62,9 +62,10 @@ resource "aws_ecs_service" "vault" {
 
   load_balancer {
     target_group_arn = "${aws_alb_target_group.vault_ui.arn}"
+
     #elb_name         = "${aws_elb.vault.name}"
-    container_name   = "vault-${var.env}"
-    container_port   = 8200
+    container_name = "vault-${var.env}"
+    container_port = 8200
   }
 
   iam_role = "${aws_iam_role.ecsServiceRole.arn}"
