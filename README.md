@@ -4,17 +4,47 @@
 
 Terraform Module for deploying Vault on AWS ECS
 
-docker run -it --rm -d --network=host --cap-add=IPC_LOCK -e 'VAULT_LOCAL_CONFIG={"backend": {"consul": {"address": "127.0.0.1:8500", "path": "vault"}}, "default_lease_ttl": "168h", "max_lease_ttl": "720h"}'  vault server
-
-docker run -it --privileged --network=host -e 'VAULT_LOCAL_CONFIG={ "disable_mlock": true, "backend": {"consul": {"address": "10.1.10.24:8500", "path": "vault"}}, "default_lease_ttl": "168h", "max_lease_ttl": "720h", "listener": [{ "tcp": { "address": "0.0.0.0:8200", "tls_disable": true }}] }'  vault server
-
-Unseal Key 1: a0yyQJjmO87E/MlEtRsjN+X6FP6TjXy1xuHmBS+4Fvw=
-Initial Root Token: df2584c6-af8c-8b8b-85b4-1b056cfc6fad
+This module contains a `.terraform-version` file which matches the version of Terraform we currently use to test with.
 
 > CircleCI
 
 
-This Module currently supports Terraform 0.10.x, but does not require it. If you use tfenv, this module contains a `.terraform-version` file which matches the version of Terraform we currently use to test with.
+#### Introduction and Assumptions
+
+This module makes a couple of assumptions and deploy vault based on them.
+
+* Vault will be deployed with a public end public endpoint behind an ALB
+* Vault gets deployed and automatically unsealed - as such we break Shamir's Secret by expecting only a single unseal key is required.  
+* Vault Traffic is currently *unencrypted* within the VPC, but uses ACM certs on an ALB to encrypt traffic to an external client.
+* The Vault ECS Task will run on an ECS Instance with Consul already running.
+* Manual initialization of vault is required.  
+
+
+##### Initialize Vault
+
+Log into an ECS host, or a host that can run docker within your VPC, or within the consul datacenter.
+
+* Start a initial vault container.
+
+`docker run -it --privileged --network=host -e 'VAULT_LOCAL_CONFIG={ "backend": {"consul": {"address": "10.1.10.24:8500", "path": "vault"}}, "default_lease_ttl": "168h", "max_lease_ttl": "720h", "listener": [{ "tcp": { "address": "0.0.0.0:8200", "tls_disable": true }}] }'  vault server`
+
+
+`docker run --rm -it -e VAULT_ADDR='http://127.0.0.1:8200' --privileged --network=host vault init -key-shares=1 -key-threshold=1`
+
+Unseal Key 1: a0yyQJjmO87E/MlEtRsjN+X6FP6TjXy1xuHmBS+4Fvw=
+Initial Root Token: df2584c6-af8c-8b8b-85b4-1b056cfc6fad
+
+
+`docker run --rm -it -e VAULT_ADDR='http://127.0.0.1:8200' --privileged --network=host vault unseal $KEY`
+
+##### Initialize Vault
+
+
+Create a Master Key AWS docs can be found here: http://docs.aws.amazon.com/kms/latest/developerguide/create-keys.html
+
+Use the newly created master key to encrypt the vault unseal key.
+
+`aws kms encrypt --key-id $KEY_ID --plaintext 'secret' --encryption-context region=us-east-1 --encryption-context tier=dev --output text --query CiphertextBlob`
 
 
 Module Input Variables

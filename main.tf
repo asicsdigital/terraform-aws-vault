@@ -1,4 +1,4 @@
-#docker run --rm -it -e VAULT_ADDR='http://127.0.0.1:8200' --privileged --network=host vault unseal a0yyQJjmO87E/MlEtRsjN+X6FP6TjXy1xuHmBS+4Fvw=
+#docker run --rm -it -e VAULT_ADDR='http://127.0.0.1:8200' --privileged --network=host vault unseal $KEY
 data "aws_availability_zones" "available" {}
 
 data "aws_vpc" "vpc" {
@@ -20,6 +20,7 @@ data "template_file" "vault" {
     datacenter            = "${data.aws_vpc.vpc.tags["Name"]}"
     env                   = "${var.env}"
     image                 = "${var.vault_image}"
+    unseal_key            = "${var.unseal_key}"
     awslogs_group         = "vault-${var.env}"
     awslogs_stream_prefix = "vault-${var.env}"
     awslogs_region        = "${var.region}"
@@ -53,7 +54,7 @@ resource "aws_ecs_service" "vault" {
   name            = "vault-${var.env}"
   cluster         = "${var.ecs_cluster_id}"
   task_definition = "${aws_ecs_task_definition.vault.arn}"
-  desired_count   = "2"                                    # var.desired_count
+  desired_count   = "${var.desired_count}"
 
   placement_constraints {
     type = "distinctInstance"
@@ -67,8 +68,6 @@ resource "aws_ecs_service" "vault" {
   }
 
   iam_role = "${aws_iam_role.ecsServiceRole.arn}"
-
-#  depends_on = [ "aws_iam_role.ecsServiceRole" ]
 
   depends_on = ["aws_alb_target_group.vault_ui",
     "aws_alb_listener.vault_https",

@@ -38,7 +38,7 @@ resource "aws_alb_target_group" "vault_ui" {
 
   health_check {
     path    = "/v1/sys/health?standbyok=true"
-    matcher = "200,429" #maybe a var?
+    matcher = "200"
   }
 
   stickiness {

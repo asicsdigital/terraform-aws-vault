@@ -7,6 +7,11 @@ variable "vault_image" {
   default     = "vault:latest"
 }
 
+variable "desired_count" {
+  description = "Number of vaults that ECS should run."
+  default     = "2"
+}
+
 variable "dns_zone" {
   description = "Zone where the Consul UI alb will be created. This should *not* be consul.example.com"
 }
@@ -35,6 +40,10 @@ variable "subnets" {
 variable "region" {
   default     = "us-east-1"
   description = "AWS Region, defaults to us-east-1"
+}
+
+variable "unseal_key" {
+  description = "Vault Unseal key"
 }
 
 variable "vpc_id" {}
