@@ -31,9 +31,6 @@ Log into an ECS host, or a host that can run docker within your VPC, or within t
 
 `docker run --rm -it -e VAULT_ADDR='http://127.0.0.1:8200' --privileged --network=host vault init -key-shares=1 -key-threshold=1`
 
-Unseal Key 1: a0yyQJjmO87E/MlEtRsjN+X6FP6TjXy1xuHmBS+4Fvw=
-Initial Root Token: df2584c6-af8c-8b8b-85b4-1b056cfc6fad
-
 
 `docker run --rm -it -e VAULT_ADDR='http://127.0.0.1:8200' --privileged --network=host vault unseal $KEY`
 
