@@ -6,7 +6,7 @@ Terraform Module for deploying Vault on AWS ECS
 
 This module contains a `.terraform-version` file which matches the version of Terraform we currently use to test with.
 
-> CircleCI
+[![CircleCI](https://circleci.com/gh/FitnessKeeper/terraform-aws-vault.svg?style=svg)](https://circleci.com/gh/FitnessKeeper/terraform-aws-vault)
 
 
 #### Introduction and Assumptions
@@ -41,7 +41,7 @@ Create a Master Key AWS docs can be found here: http://docs.aws.amazon.com/kms/l
 
 Use the newly created master key to encrypt the vault unseal key.
 
-`aws kms encrypt --key-id $KEY_ID --plaintext 'secret' --encryption-context region=us-east-1 --encryption-context tier=dev --output text --query CiphertextBlob`
+`aws kms encrypt --key-id $KEY_ID --plaintext 'secret' --encryption-context region=us-east-1,tier=dev --output text --query CiphertextBlob`
 
 
 Module Input Variables
@@ -52,94 +52,42 @@ Module Input Variables
 - `ecs_cluster_id` - ARN of the ECS ID
 - `env` - env to deploy into, should typically dev/staging/prod
 - `subnets` - List of subnets used to deploy the Consul alb
+- `unseal_keys` - List of 3 Vault Unseal keys
 - `vpc_id`  - VPC ID
-
 
 #### Optional
 
-- `additional_user_data_script` - Additional user_data scripts content
-- `region` - AWS Region - defaults to us-east-1
-- `extra_tags` - Additional tags to be added to the ECS autoscaling group. Must be in the form of an array of hashes. See https://www.terraform.io/docs/providers/aws/r/autoscaling_group.html for examples.
-```
-extra_tags = [
-    {
-      key                 = "consul_server"
-      value               = "true"
-      propagate_at_launch = true
-    },
-  ]
-```
-- `allowed_cidr_blocks` - List of subnets to allow into the ECS Security Group. Defaults to `["0.0.0.0/0"]`.
-- `heartbeat_timeout` - Heartbeat Timeout setting for how long it takes for the graceful shutodwn hook takes to timeout. This is useful when deploying clustered applications like consul that benifit from having a deploy between autoscaling create/destroy actions. Defaults to 180"
-- `security_group_ids` - a list of security group IDs to apply to the launch configuration
-- `vault_image` - Image to use when deploying consul, defaults to the hashicorp consul image
+- `vault_image` - Image to use when deploying vault, defaults to the hashicorp vault image
+- `desired_count` - Number of vaults that ECS should run. Defaults to 2
+- `hostname` - DNS Hostname for the bastion host. Defaults to ${VPC NAME}.${dns_zone} if hostname is not set
+- `iam_path` - IAM path, this is useful when creating resources with the same name across multiple regions. Defaults to /
+- `region` - AWS Region, defaults to us-east-1
 
 Usage
 -----
 
 ```hcl
-module "ecs-cluster" {
-  source    = "github.com/terraform-community-modules/tf_aws_ecs"
-  name      = "infra-services"
-  servers   = 1
-  subnet_id = ["subnet-6e101446"]
-  vpc_id    = "vpc-99e73dfc"
+module "vault" {
+  source         = "../modules/terraform-vault"
+  #source         = "github.com/FitnessKeeper/terraform-aws-vault?ref=v0.0.1"
+  alb_log_bucket = "rk-devops-${var.region}"
+  vault_image    = "${var.vault_image}"
+  ecs_cluster_id = "${module.ecs_consul.cluster_id}"
+  dns_zone       = "${aws_route53_zone.region.name}"
+  env            = "${var.env}"
+  subnets        = "${module.vpc.public_subnets}"
+  #unseal_key     = "${data.aws_kms_secret.unseal_key.vault}" # pass in a list "${split(",",data.aws_kms_secret.unseal_key.vault)}"
+  unseal_keys    = "${split(",",data.aws_kms_secret.unseal_key2.vault)}"
+  vpc_id         = "${module.vpc.vpc_id}"
 }
 
 ```
-
-#### Example cluster with consul and Registrator
-
-In order to start the Consul/Registrator task in ECS, you'll need to pass in a consul config into the `additional_user_data_script` script parameter.  For example, you might pass something like this:
-
-Please note, this module will try to mount `/etc/consul/` into `/consul/config` in the container and assumes that the consul config lives under `/etc/consul` on the docker host.  
-
-```Shell
-/bin/mkdir -p /etc/consul
-cat <<"CONSUL" > /etc/consul/config.json
-{
-	"raft_protocol": 3,
-	"log_level": "INFO",
-	"enable_script_checks": true,
-  "datacenter": "${datacenter}",
-	"retry_join_ec2": {
-		"tag_key": "consul_server",
-		"tag_value": "true"
-	}
-}
-CONSUL
-```
-
-
-```hcl
-
-data "template_file" "ecs_consul_agent_json" {
-  template = "${file("ecs_consul_agent.json.sh")}"
-
-  vars {
-    datacenter = "infra-services"
-  }
-}
-
-module "ecs-cluster" {
-  source                      = "github.com/terraform-community-modules/tf_aws_ecs"
-  name                        = "infra-services"
-  servers                     = 1
-  subnet_id                   = ["subnet-6e101446"]
-  vpc_id                      = "vpc-99e73dfc"
-  additional_user_data_script = "${data.template_file.ecs_consul_agent_json.rendered}"
-  enable_agents               = true
-}
-
-
-```
-
 
 Outputs
 =======
 
-- `cluster_id` - _(String)_ ECS Cluster id for use in ECS task and service definitions.
-- `autoscaling_group` _(Map)_ A map with keys `id`, `name`, and `arn` of the `aws_autoscaling_group` created.  
+- `public_endpoint` - _(String)_ Public FQDN of the ALB. i.e. vault.example.com
+- `public_url` - _(String)_ Public URL used to connect to vault. i.e. https://vault.example.com
 
 Authors
 =======
