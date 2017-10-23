@@ -29,7 +29,7 @@ Log into an ECS host, or a host that can run docker within your VPC, or within t
 `docker run -it --privileged --network=host -e 'VAULT_LOCAL_CONFIG={ "backend": {"consul": {"address": "10.1.10.24:8500", "path": "vault"}}, "default_lease_ttl": "168h", "max_lease_ttl": "720h", "listener": [{ "tcp": { "address": "0.0.0.0:8200", "tls_disable": true }}] }'  vault server`
 
 
-`docker run --rm -it -e VAULT_ADDR='http://127.0.0.1:8200' --privileged --network=host vault init -key-shares=1 -key-threshold=1`
+`docker run --rm -it -e VAULT_ADDR='http://127.0.0.1:8200' --privileged --network=host vault init`
 
 
 `docker run --rm -it -e VAULT_ADDR='http://127.0.0.1:8200' --privileged --network=host vault unseal $KEY`
