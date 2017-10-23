@@ -42,8 +42,9 @@ variable "region" {
   description = "AWS Region, defaults to us-east-1"
 }
 
-variable "unseal_key" {
-  description = "Vault Unseal key"
+variable "unseal_keys" {
+  type        = "list"
+  description = "List of 3 Vault Unseal keys"
 }
 
 variable "vpc_id" {}
