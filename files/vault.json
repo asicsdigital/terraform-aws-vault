@@ -2,11 +2,14 @@
         {
             "name": "vault-${env}",
             "image": "${image}",
+            "essential": true,
             "memoryReservation": 10,
             "privileged": true,
             "portMappings": [
                 {
-                    "containerPort": 8200
+                    "containerPort": 8200,
+                    "hostPort": 8200,
+                    "protocol": "tcp"
                 }
             ],
             "environment": [
@@ -17,6 +20,13 @@
             ],
             "command": [
               "server"
+            ],
+            "cpu": 0,
+            "volumesFrom": [
+              
+            ],
+            "mountPoints": [
+
             ],
             "logConfiguration": {
               "logDriver": "awslogs",
