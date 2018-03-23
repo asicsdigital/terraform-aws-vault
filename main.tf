@@ -13,9 +13,7 @@ data "aws_acm_certificate" "cert" {
   domain = "${replace(var.dns_zone, "/.$/","")}" # dirty hack to strip off trailing dot
 }
 
-data "aws_region" "current" {
-  current = true
-}
+data "aws_region" "current" {}
 
 data "template_file" "vault" {
   template = "${file("${path.module}/files/vault.json")}"
@@ -42,12 +40,6 @@ locals {
   sg_tags       = "${merge(var.tags, map("Name", local.sg_name, "Environment", var.env))}"
   log_tags      = "${merge(var.tags, map("VPC", local.vpc_name, "Application", aws_ecs_task_definition.vault.family))}"
 }
-
-#tags {
-#  VPC         = "${local.vpc_name}"
-#  Application = "${aws_ecs_task_definition.vault.family}"
-#}
-
 
 resource "aws_ecs_task_definition" "vault" {
   family                = "vault-${var.env}"
