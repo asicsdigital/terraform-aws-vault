@@ -132,6 +132,7 @@ resource "aws_ecs_service" "vault_secondary" {
     "aws_iam_role.ecsServiceRole",
   ]
 }
+
 # End Service
 # Security Groups
 resource "aws_security_group" "lb-vault-sg" {
@@ -153,5 +154,4 @@ resource "aws_security_group" "lb-vault-sg" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
 }
