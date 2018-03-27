@@ -57,28 +57,34 @@ Module Input Variables
 
 #### Optional
 
-- `vault_image` - Image to use when deploying vault, defaults to the hashicorp vault image
-- `desired_count` - Number of vaults that ECS should run. Defaults to 2
+- `vault_image` - Image to use when deploying vault, (Default: hashicorp/vault)
+- `cloudwatch_log_retention` - Specifies the number of days you want to retain log events in the specified log group. (Default: 30)
+- `desired_count` - Number of vaults that ECS should run. (Default: 2)
 - `hostname` - DNS Hostname for the bastion host. Defaults to ${VPC NAME}.${dns_zone} if hostname is not set
-- `iam_path` - IAM path, this is useful when creating resources with the same name across multiple regions. Defaults to /
-- `region` - AWS Region, defaults to us-east-1
+- `iam_path` - IAM path, this is useful when creating resources with the same name across multiple regions. (Default: / )
+- `lb_deregistration_delay` - The amount time for Elastic Load Balancing to wait before changing the state of a deregistering target from draining to unused. The range is 0-3600 seconds. (Default: 300)
+- `service_minimum_healthy_percent` - The minimum healthy percent represents a lower limit on the number of your service's tasks that must remain in the RUNNING state during a deployment
+- `tags` - A map of tags to add to all resources
 
 Usage
 -----
 
 ```hcl
 module "vault" {
-  source         = "../modules/terraform-vault"
-  #source         = "github.com/FitnessKeeper/terraform-aws-vault?ref=v0.0.1"
-  alb_log_bucket = "rk-devops-${var.region}"
-  vault_image    = "${var.vault_image}"
-  ecs_cluster_id = "${module.ecs_consul.cluster_id}"
-  dns_zone       = "${aws_route53_zone.region.name}"
-  env            = "${var.env}"
-  subnets        = "${module.vpc.public_subnets}"
-  #unseal_key     = "${data.aws_kms_secret.unseal_key.vault}" # pass in a list "${split(",",data.aws_kms_secret.unseal_key.vault)}"
-  unseal_keys    = "${split(",",data.aws_kms_secret.unseal_key2.vault)}"
-  vpc_id         = "${module.vpc.vpc_id}"
+  source         = "github.com/FitnessKeeper/terraform-aws-vault?ref=v0.0.1"
+  alb_log_bucket  = "rk-devops-${var.region}"
+  vault_image     = "${var.vault_image}"
+  ecs_cluster_ids = "${module.ecs_consul.cluster_id}"
+  dns_zone        = "${aws_route53_zone.region.name}"
+  env             = "${var.env}"
+  subnets         = "${module.vpc.public_subnets}"
+  unseal_keys     = "${split(",",data.aws_kms_secret.unseal_key.vault)}"
+  vpc_id          = "${module.vpc.vpc_id}"
+
+  tags = {
+    "foo" = "bar"
+  }
+
 }
 
 ```

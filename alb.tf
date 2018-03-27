@@ -8,12 +8,12 @@ resource "aws_alb" "vault" {
 
   tags {
     Environment = "${var.env}"
-    VPC         = "${data.aws_vpc.vpc.tags["Name"]}"
+    VPC         = "${local.vpc_name}"
   }
 
   access_logs {
     bucket = "${var.alb_log_bucket}"
-    prefix = "logs/elb/${data.aws_vpc.vpc.tags["Name"]}/vault"
+    prefix = "logs/elb/${local.vpc_name}/vault"
   }
 }
 
@@ -32,9 +32,10 @@ resource "aws_route53_record" "vault" {
 
 # Create a new target group
 resource "aws_alb_target_group" "vault_ui" {
-  port     = 8200
-  protocol = "HTTP"
-  vpc_id   = "${data.aws_vpc.vpc.id}"
+  port                 = 8200
+  protocol             = "HTTP"
+  deregistration_delay = "${var.lb_deregistration_delay}"
+  vpc_id               = "${data.aws_vpc.vpc.id}"
 
   health_check {
     path    = "/v1/sys/health?standbyok=true"
@@ -48,7 +49,7 @@ resource "aws_alb_target_group" "vault_ui" {
 
   tags {
     Environment = "${var.env}"
-    VPC         = "${data.aws_vpc.vpc.tags["Name"]}"
+    VPC         = "${local.vpc_name}"
   }
 }
 
