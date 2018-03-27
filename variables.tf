@@ -28,10 +28,6 @@ variable "ecs_cluster_ids" {
 
 variable "env" {}
 
-variable "extra_tags" {
-  default = []
-}
-
 variable "hostname" {
   description = "DNS Hostname for the bastion host. Defaults to ${VPC NAME}.${dns_zone} if hostname is not set"
   default     = ""
