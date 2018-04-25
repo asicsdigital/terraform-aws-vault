@@ -28,6 +28,7 @@ data "template_file" "vault" {
     awslogs_group         = "vault-${var.env}"
     awslogs_stream_prefix = "vault-${var.env}"
     awslogs_region        = "${data.aws_region.current.name}"
+    vault_ui              = "${var.enable_vault_ui ? "true" : "false"}"
   }
 }
 
