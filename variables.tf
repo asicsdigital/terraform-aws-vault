@@ -64,4 +64,9 @@ variable "unseal_keys" {
   description = "List of 3 Vault Unseal keys"
 }
 
+variable "enable_vault_ui" {
+  description = "Enables the built-in web UI, which is available on all listeners (address + port) at the /ui path. (Vault Enterprise, or Vault OSS 0.10+) Browsers accessing the standard Vault API address will automatically redirect there."
+  default     = true
+}
+
 variable "vpc_id" {}

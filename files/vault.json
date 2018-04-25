@@ -16,6 +16,10 @@
                 {
                     "name": "VAULT_LOCAL_CONFIG",
                     "value": "{ \"backend\": {\"consul\": {\"address\": \"127.0.0.1:8500\", \"path\": \"vault\"}}, \"default_lease_ttl\": \"168h\", \"max_lease_ttl\": \"720h\", \"listener\": [{ \"tcp\": { \"address\": \"0.0.0.0:8200\", \"tls_disable\": true }}] }"
+                },
+                {
+                    "name": "VAULT_UI",
+                    "value": "${vault_ui}"
                 }
             ],
             "command": [
@@ -52,6 +56,16 @@
             "command": [
               "sh", "-c", "sleep 10; vault unseal ${unseal_key0} "
             ],
+            "cpu": 0,
+            "volumesFrom": [
+
+            ],
+            "mountPoints": [
+
+            ],
+            "portMappings": [
+
+            ],
             "logConfiguration": {
               "logDriver": "awslogs",
                 "options": {
@@ -76,6 +90,16 @@
             "command": [
               "sh", "-c", "sleep 10; vault unseal ${unseal_key1} "
             ],
+            "cpu": 0,
+            "volumesFrom": [
+
+            ],
+            "mountPoints": [
+
+            ],
+            "portMappings": [
+
+            ],
             "logConfiguration": {
               "logDriver": "awslogs",
                 "options": {
@@ -99,6 +123,16 @@
             ],
             "command": [
               "sh", "-c", "sleep 10; vault unseal ${unseal_key2} "
+            ],
+            "cpu": 0,
+            "volumesFrom": [
+
+            ],
+            "mountPoints": [
+
+            ],
+            "portMappings": [
+
             ],
             "logConfiguration": {
               "logDriver": "awslogs",
