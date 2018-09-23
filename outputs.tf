@@ -1,7 +1,11 @@
 output "public_endpoint" {
-  value = "${aws_route53_record.vault.fqdn}"
+  value = "${aws_alb.vault.dns_name}"
+}
+
+output "custom_public_endpoint" {
+  value = "${local.custom_endpoint}"
 }
 
 output "public_url" {
-  value = "https://${aws_route53_record.vault.fqdn}"
+  value = "${local.vault_url}"
 }
