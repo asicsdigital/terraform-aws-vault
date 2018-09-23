@@ -19,6 +19,7 @@ variable "desired_count" {
 
 variable "dns_zone" {
   description = "Zone where the Consul UI alb will be created. This should *not* be consul.example.com"
+  default     = ""
 }
 
 variable "ecs_cluster_ids" {

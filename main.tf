@@ -6,11 +6,13 @@ data "aws_vpc" "vpc" {
 }
 
 data "aws_route53_zone" "zone" {
-  name = "${var.dns_zone}"
+  count = "${local.enable_custom_domain ? 1 : 0}"
+  name  = "${var.dns_zone}"
 }
 
 data "aws_acm_certificate" "cert" {
-  domain = "${replace(var.dns_zone, "/.$/","")}" # dirty hack to strip off trailing dot
+  count  = "${local.enable_custom_domain ? 1 : 0}"
+  domain = "${replace(var.dns_zone, "/.$/","")}"   # dirty hack to strip off trailing dot
 }
 
 data "aws_region" "current" {}

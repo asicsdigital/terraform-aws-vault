@@ -1,5 +1,13 @@
 # Create a new load balancer
 
+locals {
+  enable_custom_domain = "${var.dns_zone == "" ? false : true}"
+  custom_endpoint      = "${coalesce(var.hostname, "vault")}.${var.dns_zone}"
+  vault_url_protocol   = "${local.enable_custom_domain ? "https" : "http"}"
+  vault_url_hostname   = "${local.enable_custom_domain ? local.custom_endpoint : aws_alb.vault.dns_name}"
+  vault_url            = "${local.vault_url_protocol}://${local.vault_url_hostname}"
+}
+
 resource "aws_alb" "vault" {
   name_prefix     = "vault-"
   security_groups = ["${aws_security_group.lb-vault-sg.id}"]
@@ -19,6 +27,7 @@ resource "aws_alb" "vault" {
 
 # DNS Alias for the LB
 resource "aws_route53_record" "vault" {
+  count   = "${local.enable_custom_domain ? 1 : 0}"
   zone_id = "${data.aws_route53_zone.zone.zone_id}"
   name    = "${coalesce(var.hostname, "vault")}.${data.aws_route53_zone.zone.name}"
   type    = "A"
@@ -55,11 +64,24 @@ resource "aws_alb_target_group" "vault_ui" {
 
 # Create a new alb listener
 resource "aws_alb_listener" "vault_https" {
+  count             = "${local.enable_custom_domain ? 1 : 0}"
   load_balancer_arn = "${aws_alb.vault.arn}"
   port              = "443"
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-2015-05"
-  certificate_arn   = "${data.aws_acm_certificate.cert.arn}" # edit needed
+  certificate_arn   = "${data.aws_acm_certificate.cert.arn}"  # edit needed
+
+  default_action {
+    target_group_arn = "${aws_alb_target_group.vault_ui.arn}"
+    type             = "forward"
+  }
+}
+
+resource "aws_alb_listener" "vault_http" {
+  count             = "${local.enable_custom_domain ? 0 : 1}"
+  load_balancer_arn = "${aws_alb.vault.arn}"
+  port              = "80"
+  protocol          = "HTTP"
 
   default_action {
     target_group_arn = "${aws_alb_target_group.vault_ui.arn}"
