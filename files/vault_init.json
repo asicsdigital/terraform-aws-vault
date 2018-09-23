@@ -1,0 +1,78 @@
+[
+        {
+            "name": "vault-${env}",
+            "image": "${image}",
+            "essential": true,
+            "memoryReservation": 10,
+            "privileged": true,
+            "portMappings": [
+                {
+                    "containerPort": 8200,
+                    "hostPort": 8200,
+                    "protocol": "tcp"
+                }
+            ],
+            "environment": [
+                {
+                    "name": "VAULT_LOCAL_CONFIG",
+                    "value": "{ \"backend\": {\"consul\": {\"address\": \"127.0.0.1:8500\", \"path\": \"vault\"}}, \"default_lease_ttl\": \"168h\", \"max_lease_ttl\": \"720h\", \"listener\": [{ \"tcp\": { \"address\": \"0.0.0.0:8200\", \"tls_disable\": true }}] }"
+                },
+                {
+                    "name": "VAULT_UI",
+                    "value": "${vault_ui}"
+                }
+            ],
+            "command": [
+              "server"
+            ],
+            "cpu": 0,
+            "volumesFrom": [
+
+            ],
+            "mountPoints": [
+
+            ],
+            "logConfiguration": {
+              "logDriver": "awslogs",
+                "options": {
+                  "awslogs-group": "${awslogs_group}",
+                   "awslogs-region": "${awslogs_region}",
+                   "awslogs-stream-prefix": "${awslogs_stream_prefix}"
+                }
+              }
+        },
+        {
+            "name": "vault-init",
+            "image": "${image}",
+            "memoryReservation": 10,
+            "privileged": true,
+            "essential": false,
+            "environment": [
+                {
+                    "name": "VAULT_ADDR",
+                    "value": "http://127.0.0.1:8200"
+                }
+            ],
+            "command": [
+              "sh", "-c", "sleep 10; vault operator init -key-shares=3 -key-threshold=3"
+            ],
+            "cpu": 0,
+            "volumesFrom": [
+
+            ],
+            "mountPoints": [
+
+            ],
+            "portMappings": [
+
+            ],
+            "logConfiguration": {
+              "logDriver": "awslogs",
+                "options": {
+                  "awslogs-group": "${awslogs_group}",
+                   "awslogs-region": "${awslogs_region}",
+                   "awslogs-stream-prefix": "${awslogs_stream_prefix}"
+                }
+              }
+        }
+]

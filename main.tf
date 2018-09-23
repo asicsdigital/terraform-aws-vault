@@ -34,14 +34,32 @@ data "template_file" "vault" {
   }
 }
 
+data "template_file" "vault_init" {
+  template = "${file("${path.module}/files/vault_init.json")}"
+
+  vars {
+    datacenter            = "${local.vpc_name}"
+    env                   = "${var.env}"
+    image                 = "${var.vault_image}"
+    awslogs_group         = "vault-${var.env}"
+    awslogs_stream_prefix = "vault-${var.env}"
+    awslogs_region        = "${data.aws_region.current.name}"
+    vault_ui              = "${var.enable_vault_ui ? "true" : "false"}"
+  }
+}
+
 # End Data block
 # local variables
 locals {
-  cluster_count = "${length(var.ecs_cluster_ids)}"
-  vpc_name      = "${data.aws_vpc.vpc.tags["Name"]}"
-  sg_name       = "tf-${local.vpc_name}-vault-uiSecurityGroup"
-  sg_tags       = "${merge(var.tags, map("Name", local.sg_name, "Environment", var.env))}"
-  log_tags      = "${merge(var.tags, map("VPC", local.vpc_name, "Application", aws_ecs_task_definition.vault.family))}"
+  initialize             = "${var.initialize ? true : false}"
+  cluster_count          = "${length(var.ecs_cluster_ids)}"
+  vault_standalone_count = "${local.initialize ? 0 : local.cluster_count == 1 ? 1 : 0}"
+  vault_clustered_count  = "${local.initialize ? 0 : local.cluster_count > 1 ? 1 : 0}"
+  vault_init_count       = "${local.initialize ? 1 : 0}"
+  vpc_name               = "${data.aws_vpc.vpc.tags["Name"]}"
+  sg_name                = "tf-${local.vpc_name}-vault-uiSecurityGroup"
+  sg_tags                = "${merge(var.tags, map("Name", local.sg_name, "Environment", var.env))}"
+  log_tags               = "${merge(var.tags, map("VPC", local.vpc_name, "Application", aws_ecs_task_definition.vault.family))}"
 }
 
 resource "aws_ecs_task_definition" "vault" {
@@ -57,9 +75,25 @@ resource "aws_cloudwatch_log_group" "vault" {
   tags              = "${local.log_tags}"
 }
 
+resource "aws_ecs_task_definition" "vault_init" {
+  count                 = "${local.vault_init_count}"
+  family                = "vault-init-${var.env}"
+  container_definitions = "${data.template_file.vault_init.rendered}"
+  network_mode          = "host"
+  task_role_arn         = "${aws_iam_role.vault_task.arn}"
+}
+
+resource "aws_cloudwatch_log_group" "vault_init" {
+  count             = "${local.vault_init_count}"
+  name              = "${aws_ecs_task_definition.vault_init.family}"
+  retention_in_days = "1"
+  tags              = "${local.log_tags}"
+}
+
 # ECS Service
 resource "aws_ecs_service" "vault" {
-  count                              = "${local.cluster_count  == 1 ? 1 : 0}"
+  /* count                              = "${local.cluster_count  == 1 ? 1 : 0}" */
+  count                              = "${local.vault_standalone_count}"
   name                               = "vault-${var.env}"
   cluster                            = "${var.ecs_cluster_ids[0]}"
   task_definition                    = "${aws_ecs_task_definition.vault.arn}"
@@ -85,7 +119,8 @@ resource "aws_ecs_service" "vault" {
 }
 
 resource "aws_ecs_service" "vault_primary" {
-  count                              = "${local.cluster_count  > 1 ? 1 : 0}"
+  /* count                              = "${local.cluster_count  > 1 ? 1 : 0}" */
+  count                              = "${local.vault_clustered_count}"
   name                               = "vault-${var.env}-primary"
   cluster                            = "${var.ecs_cluster_ids[0]}"
   task_definition                    = "${aws_ecs_task_definition.vault.arn}"
@@ -111,7 +146,8 @@ resource "aws_ecs_service" "vault_primary" {
 }
 
 resource "aws_ecs_service" "vault_secondary" {
-  count                              = "${local.cluster_count  > 1 ? 1 : 0}"
+  /* count                              = "${local.cluster_count  > 1 ? 1 : 0}" */
+  count                              = "${local.vault_clustered_count}"
   name                               = "vault-${var.env}-secondary"
   cluster                            = "${var.ecs_cluster_ids[1]}"
   task_definition                    = "${aws_ecs_task_definition.vault.arn}"
@@ -134,6 +170,19 @@ resource "aws_ecs_service" "vault_secondary" {
     "aws_alb.vault",
     "aws_iam_role.ecsServiceRole",
   ]
+}
+
+resource "aws_ecs_service" "vault_init" {
+  count                              = "${local.vault_init_count}"
+  name                               = "vault-init-${var.env}"
+  cluster                            = "${var.ecs_cluster_ids[0]}"
+  task_definition                    = "${aws_ecs_task_definition.vault_init.arn}"
+  desired_count                      = "1"
+  deployment_minimum_healthy_percent = "0"
+
+  placement_constraints {
+    type = "distinctInstance"
+  }
 }
 
 # End Service
