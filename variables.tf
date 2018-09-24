@@ -71,3 +71,9 @@ variable "enable_vault_ui" {
 }
 
 variable "vpc_id" {}
+
+variable "initialize" {
+  type        = "string"
+  default     = "false"
+  description = "Runs a `vault operator init` command to initialize the Vault backend.  Run this once and then extract the unseal keys from the ECS task's logs."
+}
