@@ -10,14 +10,14 @@ data "aws_iam_policy_document" "assume_role_vault_task" {
 }
 
 resource "aws_iam_role" "vault_task" {
-  path               = "${var.iam_path}"
-  assume_role_policy = "${data.aws_iam_policy_document.assume_role_vault_task.json}"
+  path               = var.iam_path
+  assume_role_policy = data.aws_iam_policy_document.assume_role_vault_task.json
 }
 
 # ecsServiceRole for vault
 
 resource "aws_iam_role" "ecsServiceRole" {
-  path = "${var.iam_path}"
+  path = var.iam_path
 
   assume_role_policy = <<EOF
 {
@@ -35,9 +35,11 @@ resource "aws_iam_role" "ecsServiceRole" {
   ]
 }
 EOF
+
 }
 
 resource "aws_iam_role_policy_attachment" "attach-ecsServiceRole" {
-  role       = "${aws_iam_role.ecsServiceRole.name}"
+  role       = aws_iam_role.ecsServiceRole.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole"
 }
+
