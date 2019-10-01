@@ -23,14 +23,15 @@ variable "dns_zone" {
 }
 
 variable "ecs_cluster_ids" {
-  type        = "list"
+  type        = list(string)
   description = "List of ARNs of the ECS Cluster IDs"
 }
 
-variable "env" {}
+variable "env" {
+}
 
 variable "hostname" {
-  description = "DNS Hostname for the bastion host. Defaults to ${VPC NAME}.${dns_zone} if hostname is not set"
+  description = "DNS Hostname for the bastion host. Defaults to $${VPC NAME}.$${dns_zone} if hostname is not set"
   default     = ""
 }
 
@@ -50,18 +51,18 @@ variable "service_minimum_healthy_percent" {
 }
 
 variable "subnets" {
-  type        = "list"
+  type        = list(string)
   description = "List of subnets used to deploy the Consul alb"
 }
 
 variable "tags" {
-  type        = "map"
+  type        = map(string)
   description = "A map of tags to add to all resources"
   default     = {}
 }
 
 variable "unseal_keys" {
-  type        = "list"
+  type        = list(string)
   description = "List of 3 Vault Unseal keys"
 }
 
@@ -70,10 +71,12 @@ variable "enable_vault_ui" {
   default     = true
 }
 
-variable "vpc_id" {}
+variable "vpc_id" {
+}
 
 variable "initialize" {
-  type        = "string"
+  type        = string
   default     = "false"
   description = "Runs a `vault operator init` command to initialize the Vault backend.  Run this once and then extract the unseal keys from the ECS task's logs."
 }
+
