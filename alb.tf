@@ -20,8 +20,9 @@ resource "aws_alb" "vault" {
   }
 
   access_logs {
-    bucket = "${var.alb_log_bucket}"
-    prefix = "logs/elb/${local.vpc_name}/vault"
+    enabled = "${var.access_logs_enabled}"
+    bucket  = "${var.alb_log_bucket}"
+    prefix  = "logs/elb/${local.vpc_name}/vault"
   }
 }
 

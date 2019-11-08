@@ -77,3 +77,7 @@ variable "initialize" {
   default     = "false"
   description = "Runs a `vault operator init` command to initialize the Vault backend.  Run this once and then extract the unseal keys from the ECS task's logs."
 }
+
+variable "access_logs_enabled" {
+  default = true
+}
